@@ -60,28 +60,51 @@ class ObjectTrackingApp:
         """
         height, width = frame.shape[:2]
         
+        # Ajouter une barre d'information en haut
+        cv2.rectangle(frame, (0, 0), (width, 100), (0, 0, 0), -1)
+        
         # Dessiner la croix du centre
-        cv2.line(frame, (width//2 - 20, height//2), (width//2 + 20, height//2), (255, 0, 0), 1)
-        cv2.line(frame, (width//2, height//2 - 20), (width//2, height//2 + 20), (255, 0, 0), 1)
-        cv2.circle(frame, (width//2, height//2), 50, (255, 0, 0), 1)
+        cv2.line(frame, (width//2 - 30, height//2), (width//2 + 30, height//2), (255, 0, 0), 2)
+        cv2.line(frame, (width//2, height//2 - 30), (width//2, height//2 + 30), (255, 0, 0), 2)
+        cv2.circle(frame, (width//2, height//2), 50, (0, 255, 200), 2)
         
-        # Afficher les informations
-        y_offset = 30
-        text_color = (0, 255, 0) if info.get('object_found') else (0, 0, 255)
+        # Déterminer la couleur et le mode
+        manual_mode = info.get('manual_mode', False)
+        mode_color = (0, 0, 255) if manual_mode else (0, 255, 0)  # Rouge si manual, vert si auto
+        mode_text = "🎮 MANUEL" if manual_mode else "🤖 SUIVI"
         
-        cv2.putText(frame, f"Status: {'OBJET DÉTECTÉ' if info['object_found'] else 'En attente...'}",
-                   (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, text_color, 2)
+        # Afficher le mode
+        cv2.putText(frame, mode_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, mode_color, 2)
         
+        # Afficher le statut
+        if not manual_mode:
+            status_color = (0, 255, 0) if info.get('object_found') else (0, 0, 255)
+            status_text = "OBJET DÉTECTÉ ✓" if info['object_found'] else "En recherche..."
+            cv2.putText(frame, status_text, (width - 350, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, 
+                       status_color, 2)
+        
+        # Afficher les angles des servos
+        pan_text = f"Pan:  {info['pan_angle']:.0f}°"
+        tilt_text = f"Tilt: {info['tilt_angle']:.0f}°"
+        cv2.putText(frame, pan_text, (10, 65), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
+        cv2.putText(frame, tilt_text, (200, 65), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
+        
+        # Afficher la vitesse en mode manuel
+        if manual_mode:
+            speed = info.get('manual_speed', 5)
+            cv2.putText(frame, f"Vitesse: {speed}", (width - 200, 65), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (100, 200, 255), 1)
+        
+        # Position de l'objet (si trouvé)
         if info['object_found'] and info['object_location']:
             x, y = info['object_location']
-            cv2.putText(frame, f"Position: ({x}, {y})",
-                       (10, y_offset + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 1)
+            cv2.putText(frame, f"Pos: ({x}, {y})", (width - 200, 30), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 1)
         
-        cv2.putText(frame, f"Pan: {info['pan_angle']:.1f}° | Tilt: {info['tilt_angle']:.1f}°",
-                   (10, y_offset + 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
-        
-        cv2.putText(frame, "Commandes: SPACE=Pause | C=Calibrer | R=Reset | Q=Quitter",
-                   (10, height - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+        # Barre d'aide en bas
+        help_text = "M=Mode | ↑↓←→=Déplacer | +/-=Vitesse | SPACE=Pause | Q=Quitter"
+        cv2.putText(frame, help_text, (10, height - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, 
+                   (100, 100, 100), 1)
         
         return frame
     
@@ -107,12 +130,30 @@ class ObjectTrackingApp:
         smooth_factor = config.TRACKING_CONFIG['smooth_factor']
         last_pan = 90
         last_tilt = 90
+        manual_mode = False
+        manual_speed = 5
         
-        print("\nBoucle principale lancée...")
-        print("Appuyez sur 'C' pour calibrer la caméra sur la position des servos")
-        print("Appuyez sur 'R' pour réinitialiser les servos")
-        print("Appuyez sur 'ESPACE' pour mettre en pause")
-        print("Appuyez sur 'Q' pour quitter\n")
+        print("\n" + "="*60)
+        print("INTERFACE DE SUIVI D'OBJET - Retour caméra activé")
+        print("="*60)
+        print("\n📹 MODES:")
+        print("   🤖 SUIVI AUTO (défaut) - Suit l'objet automatiquement")
+        print("   🎮 MANUEL - Contrôle manuel complet des servos")
+        print("\n⌨️  CONTRÔLES SUIVI AUTO:")
+        print("   ESPACE  = Pause/Reprise du suivi")
+        print("   C       = Calibrer (centrer les servos)")
+        print("   R       = Réinitialiser (position par défaut)")
+        print("\n⌨️  CONTRÔLES MANUEL:")
+        print("   M       = Basculer Mode Manuel ↔ Mode Suivi")
+        print("   W/↑     = Monter la caméra")
+        print("   S/↓     = Descendre la caméra")
+        print("   A/←     = Tourner caméra à gauche")
+        print("   D/→     = Tourner caméra à droite")
+        print("   +       = Augmenter la vitesse de déplacement")
+        print("   -       = Réduire la vitesse de déplacement")
+        print("\n🔴 GÉNÉRAL:")
+        print("   Q       = Quitter l'application")
+        print("="*60 + "\n")
         
         try:
             while self.running:
@@ -126,8 +167,8 @@ class ObjectTrackingApp:
                 frame = cv2.resize(frame, (config.CAMERA_CONFIG['width'], 
                                           config.CAMERA_CONFIG['height']))
                 
-                # Tracker l'objet
-                if not self.paused:
+                # Tracker l'objet (si pas en mode manuel)
+                if not self.paused and not manual_mode:
                     frame, center = self.tracker.track_by_color_range(
                         frame,
                         config.HSV_LOWER,
@@ -164,13 +205,15 @@ class ObjectTrackingApp:
                     'object_location': self.tracker.object_location,
                     'pan_angle': self.servo.pan_angle if self.servo.connected else 0,
                     'tilt_angle': self.servo.tilt_angle if self.servo.connected else 0,
+                    'manual_mode': manual_mode,
+                    'manual_speed': manual_speed,
                 }
                 
                 # Ajouter l'interface
                 frame = self.draw_interface(frame, info)
                 
                 # Afficher l'image
-                cv2.imshow('Object Tracker', frame)
+                cv2.imshow('ObjectTracker - Camera Feed', frame)
                 
                 # Gestion des touches
                 key = cv2.waitKey(1) & 0xFF
@@ -181,13 +224,35 @@ class ObjectTrackingApp:
                     self.paused = not self.paused
                     print(f"{'⏸ En pause' if self.paused else '▶ Reprise'}")
                 elif key == ord('c'):
-                    print("✓ Calibrage: caméra centrée sur servo")
+                    print("✓ Calibrage: caméra centrée")
                     if self.servo.connected:
                         self.servo.center()
                 elif key == ord('r'):
                     print("✓ Réinitialisation des servos")
                     if self.servo.connected:
                         self.servo.center()
+                elif key == ord('m'):
+                    manual_mode = not manual_mode
+                    print(f"{'🎮 Mode MANUEL activé' if manual_mode else '🤖 Mode SUIVI activé'}")
+                elif key == ord('+') or key == ord('='):
+                    manual_speed = min(20, manual_speed + 1)
+                    print(f"Vitesse: {manual_speed}")
+                elif key == ord('-') or key == ord('_'):
+                    manual_speed = max(1, manual_speed - 1)
+                    print(f"Vitesse: {manual_speed}")
+                # Contrôles manuels: WASD + Flèches
+                elif key == ord('w') or key == ord('W') or key == 82:  # Haut
+                    if self.servo.connected and manual_mode:
+                        self.servo.tilt(self.servo.tilt_angle - manual_speed)
+                elif key == ord('s') or key == ord('S') or key == 84:  # Bas
+                    if self.servo.connected and manual_mode:
+                        self.servo.tilt(self.servo.tilt_angle + manual_speed)
+                elif key == ord('a') or key == ord('A') or key == 81:  # Gauche
+                    if self.servo.connected and manual_mode:
+                        self.servo.pan(self.servo.pan_angle - manual_speed)
+                elif key == ord('d') or key == ord('D') or key == 83:  # Droite
+                    if self.servo.connected and manual_mode:
+                        self.servo.pan(self.servo.pan_angle + manual_speed)
                 
         except KeyboardInterrupt:
             print("\n✓ Interruption clavier")
