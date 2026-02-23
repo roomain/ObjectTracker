@@ -1,0 +1,185 @@
+# ObjectTracker - GUIDE DE DÉMARRAGE RAPIDE
+
+## ✓ Application créée avec succès!
+
+Votre application de suivi d'objet a été créée dans: **D:\ProjetsGIT\ObjectTracker**
+
+## Étapes rapides pour démarrer
+
+### 1. Installation des dépendances
+
+Double-cliquez sur: **install_dependencies.bat**
+
+Ce script:
+- Cherchera automatiquement Python
+- Installera les dépendances (OpenCV, NumPy, PySerial, Pillow)
+- Affichera le statut de l'installation
+
+**Alternative: Via PowerShell (Admin)**
+
+```powershell
+cd D:\ProjetsGIT\ObjectTracker
+python -m pip install -r requirements.txt
+```
+
+### 2. Configuration matériale
+
+Avant de démarrer, assurez-vous:
+
+✓ **Caméra USB** connectée (ou caméra intégrée)
+✓ **Servomoteurs** connectés via Arduino ou contrôleur série
+✓ **Port série** configuré (voir ci-dessous)
+
+### 3. Trouver le bon port série
+
+Ouvrez le **Gestionnaire des appareils** (appuyez sur `Win + X`):
+1. Développez **Ports (COM et LPT)**
+2. Trouvez le port (ex: COM3, COM4, COM5)
+3. Modifiez dans **config.py** ligne 3:
+
+```python
+SERVO_CONFIG = {
+    'port': 'COM3',  # ← Changez ce port selon votre configuration
+    ...
+}
+```
+
+### 4. Configurer votre Arduino
+
+Si vous utilisez Arduino, uploadez ce code:
+
+```cpp
+#include <Servo.h>
+
+Servo panServo;
+Servo tiltServo;
+
+void setup() {
+  Serial.begin(9600);
+  panServo.attach(3);   // Pin 3 pour le servo horizontal
+  tiltServo.attach(5);  // Pin 5 pour le servo vertical
+  panServo.write(90);
+  tiltServo.write(90);
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    String command = Serial.readStringUntil('\n');
+    
+    if (command.startsWith("#1")) {
+      int angle = command.substring(2).toInt();
+      panServo.write(angle);
+    }
+    else if (command.startsWith("#2")) {
+      int angle = command.substring(2).toInt();
+      tiltServo.write(angle);
+    }
+  }
+}
+```
+
+### 5. Lancer l'application
+
+Double-cliquez sur: **run.bat**
+
+Ou via PowerShell:
+
+```powershell
+cd D:\ProjetsGIT\ObjectTracker
+python main.py
+```
+
+## Configuration du suivi
+
+L'application peut tracker:
+
+1. **Objets par couleur HSV** (par défaut - le plus facile)
+   - Objets colorés (balle rouge, objet jaune, etc.)
+
+2. **Visages/Peau**
+   - Pour tracker un visage ou une main
+
+3. **Configuration personnalisée**
+   - Paramètres avancés
+
+### Calibrer les couleurs HSV
+
+Pour tracker un objet spécifique, modifiez dans **config.py**:
+
+```python
+# Exemple: tracker du bleu
+HSV_LOWER = (100, 100, 100)
+HSV_UPPER = (130, 255, 255)
+```
+
+**Couleurs courantes:**
+- 🔴 **Rouge**: (0, 100, 100) - (10, 255, 255)
+- 🟢 **Vert**: (50, 100, 100) - (70, 255, 255)
+- 🔵 **Bleu**: (100, 100, 100) - (130, 255, 255)
+- 🟡 **Jaune**: (20, 100, 100) - (40, 255, 255)
+
+## Commandes clavier (pendant l'exécution)
+
+| Touche | Action |
+|--------|--------|
+| **ESPACER** | Mettre en pause / Reprendre le suivi |
+| **C** | Calibrer (centrer les servos) |
+| **R** | Réinitialiser les servos |
+| **Q** | Quitter l'application |
+
+## Structure du projet
+
+```
+ObjectTracker/
+├── main.py                   # ← Lance l'application
+├── config.py                 # ← Configuration (port série, HSV, etc.)
+├── servo_controller.py        # Contrôle des servomoteurs
+├── object_tracker.py          # Logique de suivi d'objet
+├── requirements.txt           # Dépendances
+├── install_dependencies.bat   # ← Double-clic pour installer
+├── run.bat                    # ← Double-clic pour lancer
+└── README.md                  # Documentation complète
+```
+
+## Dépannage
+
+### ✗ "Python n'a pas pu être trouvé"
+
+→ Python doit être dans le PATH Windows
+→ Réinstallez Python en cochant "Add Python to PATH"
+
+### ✗ "Port série non trouvé"
+
+→ Vérifiez le câble USB
+→ Vérifiez le port dans Gestionnaire des appareils
+→ Modifiez `config.py` avec le bon port
+
+### ✗ Servomoteurs ne bougent pas
+
+→ Vérifiez l'alimentation du contrôleur
+→ Testez avec le moniteur série d'Arduino IDE
+→ Vérifiez que le programme Arduino est uploadé
+
+### ✗ Caméra non détectée
+
+→ Vérifiez que la caméra est branchée
+→ Testez avec une autre application
+→ Essayez `camera_id: 1` dans config.py
+
+### ✗ Objet non détecté
+
+→ Améliorer l'éclairage
+→ Calibrer avec les bonnes couleurs HSV
+→ Augmenter MIN_AREA pour les petits objets
+
+## Support
+
+Pour plus de détails, consultez **README.md** dans le dossier du projet.
+
+## À partir d'ici
+
+✓ Installez les dépendances (double-clic sur install_dependencies.bat)
+✓ Configurez config.py avec vos paramètres
+✓ Lancez l'application (double-clic sur run.bat)
+
+Amusez-vous à tracker vos objets! 🎯
