@@ -1,0 +1,95 @@
+# PUSH SUR GITHUB - GUIDE
+
+✓ **Le dépôt git local est prêt!**
+
+## Étape 1: Créer un dépôt sur GitHub
+
+1. Aller sur [github.com](https://github.com)
+   - Si vous n'avez pas de compte, créez-en un
+
+2. Cliquer sur **"+"** → **"New repository"** (ou aller sur [github.com/new](https://github.com/new))
+
+3. Remplir les champs:
+   - **Repository name**: `ObjectTracker` (ou `object-tracker`)
+   - **Description**: "Application Python pour suivi d'objet avec servomoteurs"
+   - **Public** (pour partager) ou **Private** (personnel)
+   - **NE PAS** cocher "Initialize this repository with README" (on l'a déjà)
+   - Cliquer sur **"Create repository"**
+
+## Étape 2: Récupérer l'URL du dépôt
+
+Après création, vous verrez une page qui ressemble à:
+
+```
+https://github.com/VOTRE_USERNAME/ObjectTracker.git
+```
+
+Copier cette URL (elle sera utilisée plus bas)
+
+## Étape 3: Configurer l'authentification GitHub
+
+### Option A: Authentification HTTP (plus simple)
+
+```powershell
+cd D:\ProjetsGIT\ObjectTracker
+git config credential.helper wincred
+```
+
+Lors du premier push, GitHub demandera votre identifiant:
+- **Username**: Votre username GitHub
+- **Password**: Générez un token (!= votre mot de passe)
+  → Aller sur: https://github.com/settings/tokens
+  → Créer un "Personal access token" avec permissions "repo"
+
+### Option B: Authentification SSH (plus sécurisée)
+
+Voir: [Configurer SSH avec GitHub](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
+
+## Étape 4: Pousser le code vers GitHub
+
+**Remplacer `VOTRE_USERNAME` par votre username GitHub**
+
+```powershell
+cd D:\ProjetsGIT\ObjectTracker
+
+git remote add origin https://github.com/VOTRE_USERNAME/ObjectTracker.git
+
+git branch -M main
+
+git push -u origin main
+```
+
+## Résultat final
+
+✓ Votre code est maintenant sur GitHub à:
+`https://github.com/VOTRE_USERNAME/ObjectTracker`
+
+## Commandes futures
+
+Après les modifications locales:
+
+```powershell
+git add .
+git commit -m "Description des changements"
+git push
+```
+
+---
+
+## Troubleshooting
+
+### "Repository not found"
+→ Vérifier l'URL du dépôt
+→ Vérifier l'authentification
+
+### "permission denied (publickey)"
+→ Si vous utilisez SSH, vérifier la clé SSH
+→ Utiliser HTTPS à la place
+
+### "Please make sure you have the correct access rights"
+→ Token invalide ou expiré
+→ Régénérer un nouveau token
+
+---
+
+**Plus de details**: https://docs.github.com/en/get-started/using-git/about-git
